@@ -1,40 +1,35 @@
-// web-poc-test.js - Simplified JS version for testing
+// web-poc-test.js - SYNTAX/STRUCTURE VALIDATION ONLY.
+//
+// This file performs NO network I/O and NO real assertions against a
+// gateway. It exists solely so `node web-poc-test.js` parses and runs the
+// handler-registration pattern used by web-poc.ts. The previous version
+// printed "PASSED" unconditionally, which was misleading; it now states
+// plainly that nothing was tested.
+//
+// For a real connectivity check, run: python3 clawjacked_exploit.py
 
-console.log("[+] Testing syntax structure...\n");
-
-// Simulate WebSocket events without actual connection
+const events = [];
 const mockWs = {
   on: (event, handler) => {
-    console.log(`[*] Registering handler for: ${event}`);
+    if (typeof handler === "function") events.push(event);
   },
-  send: (data) => {
-    console.log(`[*] Would send: ${data}`);
-  }
+  send: () => { /* no-op: no connection exists */ }
 };
 
-// Mock implementation
-function demonstrateClawJacked() {
-  console.log("[+] Attempting ClawJacked-style connection...\n");
-
-  // In real scenario: new WebSocket("ws://127.0.0.1:4000");
-  mockWs.on("open", () => {
-    console.log("[+] WebSocket connected to localhost");
-    mockWs.send(JSON.stringify({ type: "hello", from: "research-poc" }));
-  });
-
-  mockWs.on("message", (data) => {
-    console.log("[*] Received:", data.toString());
-  });
-
-  mockWs.on("error", (err) => {
-    console.log("[!] Connection refused:", err.message);
-  });
-
-  mockWs.on("close", () => console.log("[+] Connection closed"));
-
-  // Trigger open event to test handlers
-  mockWs.on("open", () => {});
-  console.log("\n[+] Syntax test PASSED - all handlers registered");
+function registerHandlers(ws) {
+  ws.on("open", () => {});
+  ws.on("message", () => {});
+  ws.on("error", () => {});
+  ws.on("close", () => {});
+  return ws;
 }
 
-demonstrateClawJacked();
+const handlersRegistered = ["open", "message", "error", "close"];
+const withHandlers = registerHandlers(mockWs);
+const ok = handlersRegistered.every((e) => events.includes(e));
+
+console.log("[*] Syntax validation only - no network requests were made.");
+console.log(`[*] Handler registration parsed and invoked: ${ok ? "yes" : "no"}`);
+console.log("[i] This file does NOT test a gateway. See clawjacked_exploit.py / web-poc.ts.");
+console.log(ok ? "[+] SYNTAX CHECK OK (validates nothing about the vulnerability)" : "[-] SYNTAX CHECK FAILED");
+process.exitCode = ok ? 0 : 1;
